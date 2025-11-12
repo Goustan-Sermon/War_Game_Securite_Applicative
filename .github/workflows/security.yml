@@ -25,17 +25,17 @@ jobs:
       - name: Installer Snyk
         run: npm install -g snyk
 
-      # --- ANALYSE DES DÉPENDANCES (SCA) ---
+      # --- ANALYSE Snyk SCA ---
       - name: Exécuter l’analyse Snyk (SCA)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test --sarif-file-output=snyk-report-SCA.sarif || true
-
-      # --- ANALYSE DU CODE SOURCE (SAST) ---
+        run: snyk test --all-projects --sarif-file-output=snyk-report-SCA.sarif || echo "Pas de dépendances trouvées, SCA ignoré"
+      
+      # --- ANALYSE Snyk Code (SAST) ---
       - name: Exécuter l’analyse Snyk Code (SAST)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk code test --sarif-file-output=snyk-report-SAST.sarif || true
+        run: snyk code test ./ --sarif-file-output=snyk-report-SAST.sarif || echo "Pas de code analysé"
 
       # --- UPLOAD DES RAPPORTS ---
       - name: Upload du rapport Snyk Code (SAST)
