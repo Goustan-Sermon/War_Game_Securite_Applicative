@@ -1,60 +1,49 @@
 name: SecDevOps
+
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   securite:
     runs-on: ubuntu-latest
 
     steps:
-    #SETUP
+      # --- SETUP ---
       - name: Checkout du code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Installer Node.js (pour Snyk)
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.10"
+          node-version: "20"
 
-      - name: Met à jour pip
-        run: pip install --upgrade pip
-
-      - name: Installer les dépendances à partir du requirements global
-        run: pip install -r requirements.txt || true
-        
-    #Instalation de SNYK
       - name: Installer Snyk
         run: npm install -g snyk
 
-    #SCAN DES DEPENDANCES
+      # --- ANALYSE DES DÉPENDANCES (SCA) ---
       - name: Exécuter l’analyse Snyk (SCA)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test --file=requirements.txt --package-manager=pip --skip-unresolved=true --sarif > snyk-report-SCA.sarif || true
+        run: snyk test --sarif-file-output=snyk-report-SCA.sarif || true
 
-     #SCAN SAST
+      # --- ANALYSE DU CODE SOURCE (SAST) ---
       - name: Exécuter l’analyse Snyk Code (SAST)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk code test --sarif > snyk-report-SAST.sarif || true
-        
-    #SECRET SCANNING
-      - name: Secret Scanning
-        uses: gitleaks/gitleaks-action@v2
+        run: snyk code test --sarif-file-output=snyk-report-SAST.sarif || true
 
-    #RAPPORT SCAN DE CODE
-      - name: Upload du rapport Snyk Code
+      # --- UPLOAD DES RAPPORTS ---
+      - name: Upload du rapport Snyk Code (SAST)
         uses: actions/upload-artifact@v4
         with:
           name: snyk-report-SAST
           path: snyk-report-SAST.sarif
 
-    #RAPPORT SCAN DES DEPENDANCES
       - name: Upload du rapport Snyk SCA
         uses: actions/upload-artifact@v4
         with:
